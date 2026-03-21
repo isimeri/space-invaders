@@ -13,18 +13,29 @@
         <h1 class="title">Space Invaders</h1>
         <div class="grid">
             <div class="grid-left">
-                <h2>Instructions</h2>
+                <h2 class="instructions-title">Instructions</h2>
                 <p class="description">
-                    Defeat all the alien invaders before they reach the ground. Good luck, hero!
+                    Defeat all the alien invaders before they reach the ground.
                 </p>
-                <div class="instructions-container">
+                <p class="description">
+                    Good luck, hero!
+                </p>
+                <div class="controls-container">
                     <p><span class="faded-text">Move:</span> left & right arrows</p>
                     <p><span class="faded-text">Shoot:</span> Z</p>
                 </div>
+                <div class="settings-container">
+                    <label for="board-width-input"><span><span class="faded-text">Board width: </span><span class="board-width-display">15</span></span>
+                        <input type="range" name="board-width" id="board-width-input" step="1" min="15" max="20" value="15">
+                    </label>
+                </div>
 
                 <p class="game-over-message hidden">sample text</p>
-                <button class="start-btn">Start</button>
-                <button class="restart-btn display-none">Restart</button>
+                <div class="hwrapper">
+                    <button class="restart-btn display-none">Restart</button>
+                    <button class="start-btn">Start</button>
+                    <button class="reset-btn">Reset</button>
+                </div>
             </div>
             <div class="board"></div>
         </div>

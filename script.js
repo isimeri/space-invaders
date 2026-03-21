@@ -2,58 +2,75 @@ const board = document.querySelector(".board");
 const gameOverMsg = document.querySelector(".game-over-message");
 const restartBtn = document.querySelector(".restart-btn");
 const startBtn = document.querySelector(".start-btn");
-const width = 15;
-let enemiesInitialPos = [3,4,5,6,7,8,9,10,11,18,19,20,21,22,23,24,25,26,33,34,35,36,37,38,39,40,41];
-let enemiesRandomPos = new Set(Array(27).fill(null).map(i => {
-    return Math.floor(Math.random() * 3) * 15 + Math.floor(Math.random() * 8 + 3);
-}));
-let direction = 1;
-let aliens;
-let aliensLastColumn = [11,26,41];
-let aliensFirstColumn = [3,18,33];
-let domCellsArr = [];
-let gameOver = false;
+const resetBtn = document.querySelector(".reset-btn");
+const boardWidthInput = document.querySelector("#board-width-input");
+const boardWidthDisplay = document.querySelector(".board-width-display");
+
+const DEFAULT_SETTINGS = {
+    boardWidth: 15,
+    boardHeight: 15,
+    enemySpeed: 200, //ms
+    laserSpeed: 50 // ms
+}
+
+// game settings
+let boardWidth = parseInt(boardWidthInput.value) || DEFAULT_SETTINGS.boardWidth;
+const boardHeight = DEFAULT_SETTINGS.boardHeight;
+const laserSpeed = DEFAULT_SETTINGS.laserSpeed;
+const enemySpeed = DEFAULT_SETTINGS.enemySpeed;
+
+let aliensFirstColumn, aliensLastColumn, domCellsArr, aliens, direction, gameOver, gameRunning, enemyRows;
 let enemyInterval;
 
 
-function init(){ clearInterval(enemyInterval);
-    board.innerHTML = "";
+function init(){
+
+    clearInterval(enemyInterval);
     gameOver = false;
-    domCellsArr = [];
-    aliens = [...enemiesRandomPos];
-    aliensLastColumn = [11,26,41];
-    aliensFirstColumn = [3,18,33];
+    gameRunning = false;
+    board.innerHTML = "";
     gameOverMsg.classList.add("hidden");
+    domCellsArr = [];
+    direction = 1;
+    boardWidth = parseInt(boardWidthInput.value) || DEFAULT_SETTINGS.boardWidth;
+    boardWidthDisplay.textContent = boardWidthInput.value;
+    enemyRows = Math.round(boardWidth / 4);
+
+
+    const enemyRowMaxLen = Math.floor(boardWidth * 0.6);
+    const aliensSet = new Set(Array(enemyRows * Math.floor(boardWidth * 0.6)).fill(null).map(i => {
+        // generez inamicii in felul urmator
+        // enemyRows - nr de randuri de inamici. fiecare rand o sa aiba lungime de maxim 60% din latimea tablei
+        // e.g. pt o latime de 15 casute vor fi maxim 9 inamici intr-un rand
+        // restul de minim 40% spatiu liber se va imparti cat de egal se poate in stanga si in dreapta grupului de inamici
+ 
+        return Math.floor(Math.random() * enemyRows)
+        * boardWidth + Math.floor(Math.random() * enemyRowMaxLen + Math.floor((boardWidth - enemyRowMaxLen) / 2));
+    }));
+
+    aliens = [...aliensSet];
+    aliensFirstColumn = Array(enemyRows).fill(null).map((item, index) => {
+        return index * boardWidth + Math.floor((boardWidth - enemyRowMaxLen) / 2);
+    });
+    aliensLastColumn = Array(enemyRows).fill(null).map((item, index) => {
+        return index * boardWidth + Math.floor((boardWidth - enemyRowMaxLen) / 2) + enemyRowMaxLen - 1;
+    });
+    
     createBoard();
 }
-restartBtn.addEventListener("click", ()=>{
-    init();
-    // de o bagat intr-un setTimeout sau ceva
-    // sa avem un 3 sec de get ready
-    enemyInterval = setInterval(moveEnemy, 200);
-});
-
-startBtn.addEventListener("click", ()=>{
-    document.addEventListener("keydown", moveHero);
-    document.addEventListener("keydown", shootLaser);
-    startBtn.disabled = true;
-    startBtn.classList.add("display-none");
-    restartBtn.disabled = false;
-    restartBtn.classList.remove("display-none");
-    enemyInterval = setInterval(moveEnemy, 200);
-});
 
 function createBoard(){ 
-    for(let i = 0; i < width * width; i++){
+    for(let i = 0; i < boardWidth * boardHeight; i++){
         let domCell = document.createElement("div");
         domCell.classList.add("cell");
+        domCell.classList.add(`cell-${boardWidth}`);
         domCell.id = i;
         domCellsArr.push(domCell);
         board.appendChild(domCell);
     }
     paintBoard();
-    domCellsArr[Math.floor(domCellsArr.length - width/2)].classList.add("hero");
-    domCellsArr[Math.floor(domCellsArr.length - width/2)].innerHTML = `<svg
+    domCellsArr[Math.floor(domCellsArr.length - boardWidth / 2)].classList.add("hero");
+    domCellsArr[Math.floor(domCellsArr.length - boardWidth/2)].innerHTML = `<svg
         viewBox="0 0 24 24"
         role="presentation"
         version="1.1"
@@ -63,17 +80,12 @@ function createBoard(){
         <defs
             id="defs8818" />
         <path
-            d="m 10,9 c 0,-1 1,-2 2,-2 1,0 2,1 2,2 0,1 -1,2 -2,2 -1,0 -2,-1 -2,-2 z M 15,3 C 13.269619,0.62623336 12,0 12,0 12,0 10.730381,0.62623336 9,3 7.2696189,5.3737666 7.9190452,12.080248 6,15 c -1.9190452,2.919752 -3.8428842,3.438315 -5,5 -0.81820442,1.104278 -1,4 -1,4 0,0 1.9595185,-0.831153 3,-1 2.3032041,-0.373759 5.3500842,-1.649916 7,0 0.235702,0.235702 0,1 0,1 h 4 c 0,0 -0.235702,-0.764298 0,-1 1.649916,-1.649916 4.696796,-0.373759 7,0 1.040482,0.168847 3,1 3,1 0,0 -0.181796,-2.895722 -1,-4 C 21.842884,18.438315 19.919045,17.919752 18,15 16.080955,12.080248 16.730381,5.3737666 15,3 Z"
-            id="path8812"/>
+            d="m 10.166666,11.25 c 0,-0.916667 0.916668,-1.8333334 1.833334,-1.8333334 0.916666,0 1.833334,0.9166664 1.833334,1.8333334 0,0.916666 -0.916668,1.833334 -1.833334,1.833334 -0.916666,0 -1.833334,-0.916668 -1.833334,-1.833334 z M 14.75,3.75 C 13.163818,1.5740473 12,1 12,1 12,1 10.836182,1.5740473 9.25,3.75 7.6638173,5.9259527 8.2591248,12.07356 6.5,14.75 4.7408752,17.42644 2.9773562,17.901788 1.9166666,19.333334 1.166646,20.345588 1,23 1,23 c 0,0 1.7962253,-0.761891 2.75,-0.916667 2.1112705,-0.342612 4.9042438,-1.512423 6.416666,0 0.21606,0.216061 0,0.916667 0,0.916667 h 3.666668 c 0,0 -0.21606,-0.700606 0,-0.916667 1.512422,-1.512423 4.305396,-0.342612 6.416666,0 C 21.203776,22.238109 23,23 23,23 23,23 22.833354,20.345588 22.083334,19.333334 21.022644,17.901788 19.259125,17.42644 17.5,14.75 15.740875,12.07356 16.336182,5.9259527 14.75,3.75 Z"
+            id="path8812" />
         </svg>`;
-} 
+}
 
-// function clearBoard(){ 
-    // for(i=0;i<domCellsArr.length;i++){ 
-        // domCellsArr[i].class = "cell";
-    // }
-// } 
-
+// se ocupa doar de desenarea vrajmasilor
 function paintBoard() { 
     for(let i = 0; i < domCellsArr.length; i++){
         if(domCellsArr[i].classList.contains("enemy")){
@@ -82,17 +94,21 @@ function paintBoard() {
         }
     }
     for(let i = 0; i < aliens.length; i++){
+        if(domCellsArr[aliens[i]].classList.contains("hero")){
+            domCellsArr[aliens[i]].classList.remove("hero");
+        }
         domCellsArr[aliens[i]].classList.add("enemy");
         domCellsArr[aliens[i]].innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 10.54C16.78 7.44 14.63 5 12 5S7.22 7.44 7 10.54C4 11.23 2 12.5 2 14C2 16.21 6.5 18 12 18S22 16.21 22 14C22 12.5 20 11.23 17 10.54M14.93 11.84C13.03 12.05 10.97 12.05 9.07 11.84C9.03 11.56 9 11.28 9 11C9 8.8 10.35 7 12 7S15 8.8 15 11C15 11.28 15 11.56 14.93 11.84Z" /></svg>`;
     }
 } 
 
+// se ocupa si de logica lui hero si de desenarea lui
 function moveHero(e){
     if(gameOver) return;
 
     const hero = board.querySelector(".hero");
-    const leftEdge = domCellsArr.length - width;
+    const leftEdge = domCellsArr.length - boardWidth;
     const rightEdge = domCellsArr.length - 1;
 
     if(e.code === "ArrowLeft" && parseInt(hero.id) > leftEdge) {
@@ -109,8 +125,8 @@ function moveHero(e){
             <defs
                 id="defs8818" />
             <path
-                d="m 10,9 c 0,-1 1,-2 2,-2 1,0 2,1 2,2 0,1 -1,2 -2,2 -1,0 -2,-1 -2,-2 z M 15,3 C 13.269619,0.62623336 12,0 12,0 12,0 10.730381,0.62623336 9,3 7.2696189,5.3737666 7.9190452,12.080248 6,15 c -1.9190452,2.919752 -3.8428842,3.438315 -5,5 -0.81820442,1.104278 -1,4 -1,4 0,0 1.9595185,-0.831153 3,-1 2.3032041,-0.373759 5.3500842,-1.649916 7,0 0.235702,0.235702 0,1 0,1 h 4 c 0,0 -0.235702,-0.764298 0,-1 1.649916,-1.649916 4.696796,-0.373759 7,0 1.040482,0.168847 3,1 3,1 0,0 -0.181796,-2.895722 -1,-4 C 21.842884,18.438315 19.919045,17.919752 18,15 16.080955,12.080248 16.730381,5.3737666 15,3 Z"
-                id="path8812"/>
+                d="m 10.166666,11.25 c 0,-0.916667 0.916668,-1.8333334 1.833334,-1.8333334 0.916666,0 1.833334,0.9166664 1.833334,1.8333334 0,0.916666 -0.916668,1.833334 -1.833334,1.833334 -0.916666,0 -1.833334,-0.916668 -1.833334,-1.833334 z M 14.75,3.75 C 13.163818,1.5740473 12,1 12,1 12,1 10.836182,1.5740473 9.25,3.75 7.6638173,5.9259527 8.2591248,12.07356 6.5,14.75 4.7408752,17.42644 2.9773562,17.901788 1.9166666,19.333334 1.166646,20.345588 1,23 1,23 c 0,0 1.7962253,-0.761891 2.75,-0.916667 2.1112705,-0.342612 4.9042438,-1.512423 6.416666,0 0.21606,0.216061 0,0.916667 0,0.916667 h 3.666668 c 0,0 -0.21606,-0.700606 0,-0.916667 1.512422,-1.512423 4.305396,-0.342612 6.416666,0 C 21.203776,22.238109 23,23 23,23 23,23 22.833354,20.345588 22.083334,19.333334 21.022644,17.901788 19.259125,17.42644 17.5,14.75 15.740875,12.07356 16.336182,5.9259527 14.75,3.75 Z"
+                id="path8812" />
             </svg>`;
     }
     if(e.code === "ArrowRight" && parseInt(hero.id) < rightEdge) {
@@ -127,72 +143,77 @@ function moveHero(e){
             <defs
                 id="defs8818" />
             <path
-                d="m 10,9 c 0,-1 1,-2 2,-2 1,0 2,1 2,2 0,1 -1,2 -2,2 -1,0 -2,-1 -2,-2 z M 15,3 C 13.269619,0.62623336 12,0 12,0 12,0 10.730381,0.62623336 9,3 7.2696189,5.3737666 7.9190452,12.080248 6,15 c -1.9190452,2.919752 -3.8428842,3.438315 -5,5 -0.81820442,1.104278 -1,4 -1,4 0,0 1.9595185,-0.831153 3,-1 2.3032041,-0.373759 5.3500842,-1.649916 7,0 0.235702,0.235702 0,1 0,1 h 4 c 0,0 -0.235702,-0.764298 0,-1 1.649916,-1.649916 4.696796,-0.373759 7,0 1.040482,0.168847 3,1 3,1 0,0 -0.181796,-2.895722 -1,-4 C 21.842884,18.438315 19.919045,17.919752 18,15 16.080955,12.080248 16.730381,5.3737666 15,3 Z"
-                id="path8812"/>
+                d="m 10.166666,11.25 c 0,-0.916667 0.916668,-1.8333334 1.833334,-1.8333334 0.916666,0 1.833334,0.9166664 1.833334,1.8333334 0,0.916666 -0.916668,1.833334 -1.833334,1.833334 -0.916666,0 -1.833334,-0.916668 -1.833334,-1.833334 z M 14.75,3.75 C 13.163818,1.5740473 12,1 12,1 12,1 10.836182,1.5740473 9.25,3.75 7.6638173,5.9259527 8.2591248,12.07356 6.5,14.75 4.7408752,17.42644 2.9773562,17.901788 1.9166666,19.333334 1.166646,20.345588 1,23 1,23 c 0,0 1.7962253,-0.761891 2.75,-0.916667 2.1112705,-0.342612 4.9042438,-1.512423 6.416666,0 0.21606,0.216061 0,0.916667 0,0.916667 h 3.666668 c 0,0 -0.21606,-0.700606 0,-0.916667 1.512422,-1.512423 4.305396,-0.342612 6.416666,0 C 21.203776,22.238109 23,23 23,23 23,23 22.833354,20.345588 22.083334,19.333334 21.022644,17.901788 19.259125,17.42644 17.5,14.75 15.740875,12.07356 16.336182,5.9259527 14.75,3.75 Z"
+                id="path8812" />
             </svg>`;
     }
 }
 
+// defineste logica miscarii dusmanilor
 function moveEnemy(){
-    if(aliensLastColumn.some(item => item%width === width-1) && direction === 1){
+    if(aliensLastColumn.some(item => item%boardWidth === boardWidth-1) && direction === 1){
         direction = -1;
         for(let i = 0; i<aliens.length; i++){
-            aliens[i]+=width;
+            aliens[i]+=boardWidth;
         }
-        console.log(direction);
         paintBoard();
         checkForLose();
         return;
     }
-    if(aliensFirstColumn.some(item => item%width === 0) && direction === -1){
+    if(aliensFirstColumn.some(item => item % boardWidth === 0) && direction === -1){
         direction = 1;
         for(let i = 0; i<aliens.length; i++){
-            aliens[i] += width;
+            aliens[i] += boardWidth;
         }
-        console.log(direction);
         paintBoard();
         checkForLose();
         return;
     }
-    for(let i = 0; i<aliens.length; i++){
-        aliens[i]+=direction;
+    for(let i = 0; i < aliens.length; i++){
+        aliens[i] += direction;
     }
-    aliensFirstColumn = aliensFirstColumn.map(item => item+=direction);
-    aliensLastColumn = aliensLastColumn.map(item => item+=direction);
+    aliensFirstColumn = aliensFirstColumn.map(item => item += direction);
+    aliensLastColumn = aliensLastColumn.map(item => item += direction);
     paintBoard();
 }
-    
+// verifica daca am iesit victoriosi
 function checkForWin(){
     if(aliens.length === 0){
+        clearInterval(enemyInterval);
+        gameRunning = false;
+        boardWidthInput.disabled = false;
         gameOver = true;
         gameOverMsg.classList.remove("hidden");
         gameOverMsg.innerText = "What a glorious victory!";
-        clearInterval(enemyInterval);
     }
 }
+// verifica daca am fost infranti
 function checkForLose(){
-    for(let i = domCellsArr.length -1; i>= domCellsArr.length-width; i--){
+    // verific randul pe care se afla hero, primul de jos
+    for(let i = domCellsArr.length -1; i >= domCellsArr.length - boardWidth; i--){
         if(domCellsArr[i].classList.contains("enemy")){
-            gameOver=true;
             clearInterval(enemyInterval);
+            gameRunning = false;
+            boardWidthInput.disabled = false;
+            gameOver = true;
             gameOverMsg.classList.remove("hidden");
             gameOverMsg.innerText = "You have been defeated...";
             return;
         }
     }
 }
-
+// se ocupa de logica laserului si de desenarea lui
 function shootLaser(e){
     if(gameOver) return;
     if(e.code === "KeyZ"){ 
         const hero = document.querySelector(".hero");
         const heroId = hero.id;
-        let laserId = heroId-width;
+        let laserId = heroId - boardWidth;
         domCellsArr[laserId].classList.add("laser");
 
         let laserMove = setInterval(()=>{ 
             domCellsArr[laserId].classList.remove("laser");
-            laserId -= width;
+            laserId -= boardWidth;
             domCellsArr[laserId].classList.add("laser");
             if(domCellsArr[laserId].classList.contains("enemy")){
                 clearInterval(laserMove);
@@ -200,12 +221,67 @@ function shootLaser(e){
                 domCellsArr[laserId].innerHTML = ``;
                 aliens.splice(aliens.indexOf(laserId), 1);
                 checkForWin();
-            } if(laserId<15){
+            } if(laserId < boardWidth){
                 clearInterval(laserMove);
                 domCellsArr[laserId].classList.remove("laser");
             }
-        }, 50);
+        }, laserSpeed);
     }
 }
+
+// ========================== event listeners ==============================
+
+boardWidthInput.addEventListener("input", e => {
+    if(gameRunning) return;
+
+    boardWidthDisplay.textContent = e.target.value;
+});
+
+boardWidthInput.addEventListener("change", e => {
+    if(gameRunning) return;
+
+    document.removeEventListener("keydown", moveHero);
+    document.removeEventListener("keydown", shootLaser);
+    boardWidth = parseInt(e.target.value);
+    startBtn.disabled = false;
+    startBtn.classList.remove("display-none");
+    restartBtn.disabled = true;
+    restartBtn.classList.add("display-none");
+    init();
+});
+
+restartBtn.addEventListener("click", () => {
+    init();
+    gameRunning = true;
+    boardWidthInput.disabled = true;
+    // de o bagat intr-un setTimeout ?
+    // sa avem 1-2 sec de get ready
+    enemyInterval = setInterval(moveEnemy, enemySpeed);
+});
+
+startBtn.addEventListener("click", () => {
+    document.addEventListener("keydown", moveHero);
+    document.addEventListener("keydown", shootLaser);
+    startBtn.disabled = true;
+    startBtn.classList.add("display-none");
+    restartBtn.disabled = false;
+    restartBtn.classList.remove("display-none");
+    gameRunning = true;
+    boardWidthInput.disabled = true;
+    enemyInterval = setInterval(moveEnemy, enemySpeed);
+});
+
+resetBtn.addEventListener("click", () => {
+    gameRunning = false;
+    clearInterval(enemyInterval);
+    document.removeEventListener("keydown", moveHero);
+    document.removeEventListener("keydown", shootLaser);
+    boardWidthInput.disabled = false;
+    startBtn.disabled = false;
+    startBtn.classList.remove("display-none");
+    restartBtn.disabled = true;
+    restartBtn.classList.add("display-none");
+    init();
+});
 
 init();

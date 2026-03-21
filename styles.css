@@ -1,8 +1,10 @@
 :root{
     --board-width: 100%;
-    --red0: hsl(356, 68%, 34%);
-    --red1: hsl(357, 69%, 45%);
-    --red2: hsl(357, 69%, 65%);
+    --red0: hsl(356, 68%, 24%);
+    --red1: hsl(356, 68%, 34%);
+    --red2: hsl(357, 69%, 45%);
+    --red3: hsl(357, 69%, 60%);
+    --red4: hsl(357, 69%, 75%);
     --green0: hsl(95, 20%, 22%);
     --green1: hsl(95, 40%, 34%);
     --green2: hsl(95, 46%, 49%);
@@ -22,13 +24,13 @@ body{
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    background-color: #555;
+    background-color: #333;
     color: #ccc;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 .supreme-container{
     width: 100%;
-    max-width: 1200px;
+    max-width: 700px;
     margin: 0 auto;
     padding: 0 1rem;
 }
@@ -42,11 +44,7 @@ body{
     grid-template-columns: 1fr;
     gap: 1rem;
 }
-@media screen and (min-width: 700px) {
-    .grid{
-        grid-template-columns: 1fr 1fr;
-    }
-}
+
 .board{
     min-width: 400px;
     width: var(--board-width);
@@ -58,15 +56,32 @@ body{
     border-radius: 0.5rem;
 }
 .cell{
-    width: calc(var(--board-width) / 15);
-    aspect-ratio: 1/1;
+    height: calc(var(--board-width) / 15);
     background-color: var(--cell-bg-color);
+}
+.cell-15{
+    width: calc(var(--board-width) / 15);
+}
+.cell-16{
+    width: calc(var(--board-width) / 16);
+}
+.cell-17{
+    width: calc(var(--board-width) / 17);
+}
+.cell-18{
+    width: calc(var(--board-width) / 18);
+}
+.cell-19{
+    width: calc(var(--board-width) / 19);
+}
+.cell-20{
+    width: calc(var(--board-width) / 20);
 }
 .enemy, .hero{
     display: flex;
 }
 .enemy > svg{
-    fill: var(--red2);
+    fill: var(--red3);
     max-width: 100%;
 } 
 .hero > svg{
@@ -81,9 +96,14 @@ body{
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    background-color: #333;
+    background-color: #222;
     padding: 1rem;
     border-radius: 0.5rem;
+}
+
+.instructions-title{
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #666;
 }
 .game-over-message{
     padding: 1rem;
@@ -93,27 +113,53 @@ body{
     color: #111;
     font-size: 1.2rem;
 }
-.start-btn, .restart-btn{
+.hwrapper{
+    margin-top: auto;
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+.start-btn, .restart-btn, .reset-btn{
     padding: 0.5rem 1rem;
     font-family: inherit;
     font-size: 1.1rem;
     border: none;
     border-radius: 0.5rem;
-    background-color: var(--green1);
-    color: #eee;
+    background-color: var(--green2);
+    color: #111;
     transition: all 0.2s ease-in-out;
     cursor: pointer;
-    margin-top: auto;
+    flex-grow: 1;
+    flex-basis: 0;
+}
+.reset-btn{
+    background-color: var(--red3);
+}
+.reset-btn:hover{
+    background-color: var(--red4);
 }
 .start-btn:hover, .restart-btn:hover{
-    cursor: pointer;
-    background-color: var(--green2);
+    background-color: var(--green3);
 }
-.instructions-container{
-    padding: 0.5rem;
-    border: 1px dashed #777;
+.controls-container{
+    padding: 0.8rem;
+    border: 2px dashed #777;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.settings-container{
+    padding: 0.8rem;
+    border: 2px dashed #777;
+}
+.settings-container > label{
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
 }
 .faded-text{
+    font-weight: normal;
     color: #999;
 }
 footer{
@@ -128,11 +174,33 @@ footer > p{
     color: #ccc;
 }
 .author:hover{
-    color: var(--red2);
+    color: var(--red4);
 }
 .hidden{
     visibility: hidden;
 }
 .display-none{
     display: none;
+}
+
+/* ======================= media queries ========================= */
+@media screen and (min-width: 800px) {
+    .instructions-title{
+        font-size: 2rem;
+    }
+    .description{
+        font-size: 1.1rem;
+    }
+    .controls-container, .settings-container{
+        font-size: 1.1rem;
+    }
+}
+
+@media screen and (min-width: 900px) {
+    .supreme-container{
+        max-width: 1200px;
+    }
+    .grid{
+        grid-template-columns: 1fr 1fr;
+    }
 }
