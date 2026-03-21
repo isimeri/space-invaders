@@ -152,6 +152,7 @@ body{
 .settings-container{
     padding: 0.8rem;
     border: 2px dashed #777;
+    font-weight: bold;
 }
 .settings-container > label{
     display: flex;
