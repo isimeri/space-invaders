@@ -1,3 +1,5 @@
+require("./styles.css");
+
 const board = document.querySelector(".board");
 const gameOverMsg = document.querySelector(".game-over-message");
 const restartBtn = document.querySelector(".restart-btn");

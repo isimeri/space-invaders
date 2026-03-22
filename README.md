@@ -14,13 +14,23 @@ The slider can't be changed while the game is running. So, either finish your cu
 - The **Reset** button will end the current game and reset the board. Basically acts like a page refresh.
 
 ## Tech Stack
+Languages used for this project:
 - HTML
 - CSS
 - JavaScript
 
+Packages used for this project:
+- Webpack
+- Babel
+- Autoprefixer
+
 ## How to run locally
 1. Clone the repo
-2. Either open index.html directly in the browser or run it with something like *Live Server*
+2. Run these commands, in this order, inside the root folder:  
+  2a. `npm install`  
+  2b. `npm run build`  
+  2c. `npm run dev`
+3. Now the app should be accessible at *`localhost:8080`*
 
 ## Demo
 Link: [Click here for a live preview](https://isimeri.github.io/space-invaders/)
